@@ -1,9 +1,10 @@
-name: Build APK (Vishal P4A Engine)
+name: Build APK (Vishal)
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -16,14 +17,15 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt update
-        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip libffi-dev libssl-dev libncurses5 liblzma-dev
+        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip \
+          libffi-dev libssl-dev libncurses5 liblzma-dev wget
 
     - name: Install Python Dependencies
       run: |
         pip install --upgrade pip
         pip install cython wheel setuptools
 
-    - name: Install python-for-android (latest)
+    - name: Install python-for-android
       run: |
         pip install git+https://github.com/kivy/python-for-android.git
 
@@ -32,18 +34,17 @@ jobs:
         mkdir -p $HOME/.local/share
         cd $HOME/.local/share
 
-        # SDK
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
         unzip commandlinetools-linux-11076708_latest.zip -d android-sdk
+
         yes | android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk \
           "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-        # NDK
         wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
         unzip android-ndk-r25b-linux.zip
         mv android-ndk-r25b android-ndk
 
-    - name: Build APK using P4A
+    - name: Build APK
       run: |
         p4a apk \
           --private ./ \
@@ -61,4 +62,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Vishal-Extractor-APK
-        path: *.apk
+        path: "*.apk"
