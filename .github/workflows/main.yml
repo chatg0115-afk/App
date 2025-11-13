@@ -18,7 +18,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip \
-          libffi-dev libssl-dev libncurses5 liblzma-dev wget
+          libffi-dev libssl-dev liblzma-dev wget libncursesw6
 
     - name: Install Python Dependencies
       run: |
