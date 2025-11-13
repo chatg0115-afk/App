@@ -11,16 +11,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install System Dependencies
+    - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip \
-          libffi-dev libssl-dev liblzma-dev wget libncursesw6
+        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip wget \
+          libffi-dev libssl-dev liblzma-dev libncursesw6
 
-    - name: Install Python Dependencies
+    - name: Install Python dependencies
       run: |
         pip install --upgrade pip
         pip install cython wheel setuptools
@@ -29,22 +29,29 @@ jobs:
       run: |
         pip install git+https://github.com/kivy/python-for-android.git
 
-    - name: Download Android SDK & NDK
+    - name: Install Android SDK + NDK (2025 FIXED)
       run: |
-        mkdir -p $HOME/.local/share
-        cd $HOME/.local/share
+        mkdir -p $HOME/.local/share/android-sdk/cmdline-tools
+        cd $HOME/.local/share/android-sdk/cmdline-tools
 
+        # download cmdline-tools
         wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip commandlinetools-linux-11076708_latest.zip -d android-sdk
+        unzip commandlinetools-linux-11076708_latest.zip -d latest
 
-        yes | android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk \
+        # install packages
+        yes | $HOME/.local/share/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.local/share/android-sdk \
           "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
+        # download NDK
+        cd $HOME/.local/share
         wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
         unzip android-ndk-r25b-linux.zip
         mv android-ndk-r25b android-ndk
 
-    - name: Build APK
+    - name: Build APK with P4A
+      env:
+        ANDROIDSDK: $HOME/.local/share/android-sdk
+        ANDROIDNDK: $HOME/.local/share/android-ndk
       run: |
         p4a apk \
           --private ./ \
@@ -55,8 +62,8 @@ jobs:
           --requirements=python3,kivy,androguard,pillow \
           --orientation=portrait \
           --arch=arm64-v8a \
-          --sdk-dir=$HOME/.local/share/android-sdk \
-          --ndk-dir=$HOME/.local/share/android-ndk
+          --sdk-dir=$ANDROIDSDK \
+          --ndk-dir=$ANDROIDNDK
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
