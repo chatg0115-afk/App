@@ -3,22 +3,24 @@
 # App info
 title = APK URL Extractor
 package.name = urlextractor
-package.domain = com.extractor
+package.domain = com.vishal
 
 # Source
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,txt
+source.include_exts = py,png,jpg,kv,atlas,txt,json
 
 # Version
 version = 1.0
+version.regex = __version__ = ['"](.*)['"]
+version.filename = %(source.dir)s/main.py
 
-# Requirements - UPDATED FOR 2025
-requirements = python3,kivy==2.3.0,androguard==4.1.2,pillow,pycryptodome
+# Requirements
+requirements = python3,kivy==2.3.0,androguard==4.1.2,pillow==10.4.0,pycryptodome
 
 # Permissions
 android.permissions = INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
-# API levels - UPDATED FOR 2025
+# API levels
 android.api = 33
 android.minapi = 21
 
@@ -34,19 +36,22 @@ fullscreen = 0
 # Enable AndroidX
 android.enable_androidx = True
 
-# Gradle
-android.gradle_dependencies = androidx.appcompat:appcompat:1.6.1
+# Gradle dependencies
+android.gradle_dependencies = 
+    androidx.appcompat:appcompat:1.6.1,
+    androidx.core:core:1.12.0
 
-# App theme
-android.meta_data = android.app.lib_name=urlextractor
-
+# Buildozer settings
 [buildozer]
 
 # Log level
-log_level = 2
+log_level = 1
 
 # Build directory
 build_dir = .buildozer
 
 # Bin directory
 bin_dir = ./bin
+
+# Cache for CI
+buildozer.cache_dir = .buildozer_cache
