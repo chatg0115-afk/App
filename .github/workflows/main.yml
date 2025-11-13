@@ -1,72 +1,55 @@
-name: Build APK (Vishal)
+name: Build APK
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
     - name: Install system dependencies
       run: |
-        sudo apt update
-        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip wget \
-          libffi-dev libssl-dev liblzma-dev libncursesw6
+        sudo apt-get update
+        sudo apt-get install -y \
+          git \
+          zip \
+          unzip \
+          openjdk-11-jdk \
+          autoconf \
+          libtool \
+          pkg-config \
+          zlib1g-dev \
+          libncurses5-dev \
+          libncursesw5-dev \
+          libtinfo5 \
+          cmake \
+          libffi-dev \
+          libssl-dev
 
-    - name: Install Python dependencies
+    - name: Install Buildozer
       run: |
         pip install --upgrade pip
-        pip install cython wheel setuptools
+        pip install buildozer cython virtualenv
 
-    - name: Install python-for-android
+    - name: Build APK with Buildozer
       run: |
-        pip install git+https://github.com/kivy/python-for-android.git
+        buildozer android debug
+        ls -la bin/
 
-    - name: Install Android SDK + NDK (2025 FIXED)
-      run: |
-        mkdir -p $HOME/.local/share/android-sdk/cmdline-tools
-        cd $HOME/.local/share/android-sdk/cmdline-tools
-
-        # download cmdline-tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-        unzip commandlinetools-linux-11076708_latest.zip -d latest
-
-        # install packages
-        yes | $HOME/.local/share/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.local/share/android-sdk \
-          "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-        # download NDK
-        cd $HOME/.local/share
-        wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
-        unzip android-ndk-r25b-linux.zip
-        mv android-ndk-r25b android-ndk
-
-    - name: Build APK with P4A
-      env:
-        ANDROIDSDK: $HOME/.local/share/android-sdk
-        ANDROIDNDK: $HOME/.local/share/android-ndk
-      run: |
-        p4a apk \
-          --private ./ \
-          --package=com.extractor.urlextractor \
-          --name="APK URL Extractor" \
-          --version=1.0 \
-          --bootstrap=sdl2 \
-          --requirements=python3,kivy,androguard,pillow \
-          --orientation=portrait \
-          --arch=arm64-v8a \
-          --sdk-dir=$ANDROIDSDK \
-          --ndk-dir=$ANDROIDNDK
-
-    - name: Upload APK
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Vishal-Extractor-APK
-        path: "*.apk"
+        name: APK-URL-Extractor
+        path: bin/*.apk
+        retention-days: 7
