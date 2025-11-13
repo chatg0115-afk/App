@@ -1,6 +1,6 @@
 """
-APK URL Extractor - Complete Working App
-Save this as main.py in ~/url_extractor_app/
+APK URL Extractor - Fixed & Tested 2025
+Compatible with latest Kivy & Android
 """
 
 from kivy.app import App
@@ -14,24 +14,31 @@ from kivy.uix.popup import Popup
 from kivy.core.window import Window
 from kivy.clock import Clock
 from kivy.graphics import Color, RoundedRectangle
-from androguard.core.bytecodes.apk import APK
 import re
 import threading
 import os
 
-# Set window background color
-Window.clearcolor = (0.2, 0.3, 0.5, 1)
+# Try to import androguard
+try:
+    from androguard.core.bytecodes.apk import APK
+    ANDROGUARD_AVAILABLE = True
+except ImportError:
+    ANDROGUARD_AVAILABLE = False
+    print("Warning: androguard not available")
+
+# Set window background
+Window.clearcolor = (0.15, 0.15, 0.2, 1)
 
 
 class GradientButton(Button):
-    """Beautiful gradient button"""
+    """Modern styled button"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.background_color = (0, 0, 0, 0)
         self.background_normal = ''
         with self.canvas.before:
-            Color(0.2, 0.5, 0.9, 1)
-            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+            Color(0.2, 0.6, 0.86, 1)
+            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[15])
         self.bind(pos=self.update_rect, size=self.update_rect)
 
     def update_rect(self, *args):
@@ -51,55 +58,58 @@ class URLExtractorApp(App):
             'facebook.com/tr', 'google-analytics.com', 'googletagmanager.com',
             'ads.', 'adservice', 'analytics', 'tracking', 'metric', 'telemetry',
             'crashlytics', 'firebase.com', 'amazonaws.com', 'cloudfront.net',
-            'appspot.com', 'unity3d.com', 'appsflyer', 'adjust.com'
+            'appspot.com', 'unity3d.com', 'appsflyer', 'adjust.com',
+            'googleapis.com', 'gstatic.com'
         ]
 
     def build(self):
+        # Check androguard
+        if not ANDROGUARD_AVAILABLE:
+            return self.build_error_screen()
+        
         # Main layout
-        layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
+        layout = BoxLayout(orientation='vertical', padding=15, spacing=10)
         
         # Header
         header = Label(
-            text='[b]🚀 APK URL Extractor[/b]',
-            markup=True,
-            size_hint_y=0.1,
-            font_size='24sp',
+            text='APK URL Extractor',
+            size_hint_y=0.08,
+            font_size='22sp',
+            bold=True,
             color=(1, 1, 1, 1)
         )
         layout.add_widget(header)
         
         # Subtitle
         subtitle = Label(
-            text='Extract URLs • Filter Ads • Save Results',
-            size_hint_y=0.05,
-            font_size='14sp',
+            text='Extract • Filter • Save',
+            size_hint_y=0.04,
+            font_size='13sp',
             color=(0.7, 0.9, 1, 1)
         )
         layout.add_widget(subtitle)
         
         # Select APK button
         self.select_btn = GradientButton(
-            text='📁 Select APK File',
-            size_hint_y=0.1,
-            font_size='18sp',
-            bold=True
+            text='Select APK File',
+            size_hint_y=0.08,
+            font_size='16sp'
         )
         self.select_btn.bind(on_press=self.select_apk)
         layout.add_widget(self.select_btn)
         
         # Extract button
         self.extract_btn = GradientButton(
-            text='⚡ Extract URLs',
-            size_hint_y=0.1,
-            font_size='18sp',
-            bold=True,
+            text='Extract URLs',
+            size_hint_y=0.08,
+            font_size='16sp',
             disabled=True
         )
         self.extract_btn.bind(on_press=self.extract_urls)
         layout.add_widget(self.extract_btn)
         
         # Progress bar
-        self.progress = ProgressBar(max=100, size_hint_y=0.05)
+        self.progress = ProgressBar(max=100, size_hint_y=0.03)
         self.progress.value = 0
         layout.add_widget(self.progress)
         
@@ -107,20 +117,21 @@ class URLExtractorApp(App):
         self.status_label = Label(
             text='Ready to extract URLs',
             size_hint_y=0.05,
-            font_size='14sp',
+            font_size='13sp',
             color=(0.5, 1, 0.5, 1)
         )
         layout.add_widget(self.status_label)
         
         # Results area
-        scroll = ScrollView(size_hint_y=0.45)
+        scroll = ScrollView(size_hint_y=0.5)
         self.results_label = Label(
             text='URLs will appear here...',
             size_hint_y=None,
             font_size='12sp',
-            color=(1, 1, 1, 1),
+            color=(0.9, 0.9, 0.9, 1),
             halign='left',
-            valign='top'
+            valign='top',
+            text_size=(Window.width - 40, None)
         )
         self.results_label.bind(
             texture_size=self.results_label.setter('size')
@@ -130,10 +141,9 @@ class URLExtractorApp(App):
         
         # Save button
         self.save_btn = GradientButton(
-            text='💾 Save Results',
-            size_hint_y=0.1,
-            font_size='18sp',
-            bold=True,
+            text='Save Results',
+            size_hint_y=0.08,
+            font_size='16sp',
             disabled=True
         )
         self.save_btn.bind(on_press=self.save_results)
@@ -141,14 +151,35 @@ class URLExtractorApp(App):
         
         return layout
 
-    def select_apk(self, instance):
-        """Open file chooser to select APK"""
-        content = BoxLayout(orientation='vertical', spacing=10)
+    def build_error_screen(self):
+        """Show error if androguard not available"""
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=20)
         
-        # File chooser
+        error_label = Label(
+            text='ERROR: Androguard not installed!\n\n'
+                 'Install with:\npip install androguard',
+            font_size='16sp',
+            color=(1, 0.3, 0.3, 1),
+            halign='center'
+        )
+        layout.add_widget(error_label)
+        return layout
+
+    def select_apk(self, instance):
+        """Open file chooser"""
+        content = BoxLayout(orientation='vertical', spacing=10, padding=10)
+        
+        # File chooser - check multiple paths
+        paths = ['/sdcard', '/storage/emulated/0', os.path.expanduser('~')]
+        start_path = paths[0]
+        for path in paths:
+            if os.path.exists(path):
+                start_path = path
+                break
+        
         filechooser = FileChooserListView(
             filters=['*.apk'],
-            path='/sdcard'
+            path=start_path
         )
         content.add_widget(filechooser)
         
@@ -162,18 +193,19 @@ class URLExtractorApp(App):
         btn_layout.add_widget(cancel_button)
         content.add_widget(btn_layout)
         
-        # Create popup
+        # Popup
         popup = Popup(
             title='Choose APK File',
             content=content,
-            size_hint=(0.9, 0.9)
+            size_hint=(0.95, 0.9)
         )
         
         def on_select(btn):
             if filechooser.selection:
                 self.selected_apk = filechooser.selection[0]
                 filename = os.path.basename(self.selected_apk)
-                self.select_btn.text = f'✓ {filename[:25]}...'
+                short_name = filename[:30] + '...' if len(filename) > 30 else filename
+                self.select_btn.text = f'{short_name}'
                 self.extract_btn.disabled = False
                 self.status_label.text = 'APK selected! Ready to extract.'
                 self.status_label.color = (0.5, 1, 0.5, 1)
@@ -185,136 +217,218 @@ class URLExtractorApp(App):
         popup.open()
 
     def extract_urls(self, instance):
-        """Extract URLs from selected APK"""
-        if not self.selected_apk:
+        """Extract URLs from APK"""
+        if not self.selected_apk or not ANDROGUARD_AVAILABLE:
             return
         
         self.extract_btn.disabled = True
         self.status_label.text = 'Extracting URLs...'
         self.status_label.color = (1, 1, 0, 1)
         self.progress.value = 0
+        self.results_label.text = 'Processing...'
         
-        # Run extraction in separate thread
+        # Run in thread
         thread = threading.Thread(target=self._extract_worker)
+        thread.daemon = True
         thread.start()
 
     def _extract_worker(self):
-        """Worker thread for URL extraction"""
+        """Worker thread for extraction"""
         try:
-            # Update progress
-            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 20), 0)
+            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 10), 0)
             
             # Load APK
             apk = APK(self.selected_apk)
-            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 40), 0)
+            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 30), 0)
             
-            # Extract URLs from various sources
+            # Extract URLs
             urls_set = set()
             
             # From manifest
-            manifest = apk.get_android_manifest_xml()
-            urls_set.update(self._extract_urls_from_text(str(manifest)))
+            try:
+                manifest = apk.get_android_manifest_xml()
+                urls_set.update(self._extract_urls_from_text(str(manifest)))
+            except Exception as e:
+                print(f"Manifest error: {e}")
             
-            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 60), 0)
+            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 50), 0)
             
             # From resources
-            for file in apk.get_files():
-                if file.endswith(('.xml', '.json', '.txt')):
-                    try:
-                        content = apk.get_file(file).decode('utf-8', errors='ignore')
-                        urls_set.update(self._extract_urls_from_text(content))
-                    except:
-                        pass
+            try:
+                files = apk.get_files()
+                for idx, file in enumerate(files):
+                    if file.endswith(('.xml', '.json', '.txt', '.html')):
+                        try:
+                            content = apk.get_file(file)
+                            if content:
+                                text = content.decode('utf-8', errors='ignore')
+                                urls_set.update(self._extract_urls_from_text(text))
+                        except:
+                            pass
+                    
+                    # Update progress
+                    if idx % 100 == 0:
+                        progress = 50 + int((idx / len(files)) * 30)
+                        Clock.schedule_once(
+                            lambda dt, p=progress: setattr(self.progress, 'value', p), 0
+                        )
+            except Exception as e:
+                print(f"Files error: {e}")
             
-            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 80), 0)
+            Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 90), 0)
             
             # Filter ads
-            filtered_urls = [url for url in urls_set if not self._is_ad_domain(url)]
+            filtered_urls = [
+                url for url in urls_set 
+                if not self._is_ad_domain(url) and self._is_valid_url(url)
+            ]
             self.extracted_urls = sorted(filtered_urls)
             
             Clock.schedule_once(lambda dt: setattr(self.progress, 'value', 100), 0)
-            
-            # Update UI
             Clock.schedule_once(self._update_results, 0)
             
         except Exception as e:
-            Clock.schedule_once(
-                lambda dt: self._show_error(f'Error: {str(e)}'), 0
-            )
+            error_msg = f'Error: {str(e)}'
+            Clock.schedule_once(lambda dt: self._show_error(error_msg), 0)
 
     def _extract_urls_from_text(self, text):
-        """Extract URLs from text using regex"""
-        url_pattern = r'https?://[^\s"\'<>)}\]]+|(?:www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}[^\s"\'<>)}\]]*'
-        matches = re.findall(url_pattern, text, re.IGNORECASE)
+        """Extract URLs using regex"""
+        if not text:
+            return set()
+        
+        # URL patterns
+        patterns = [
+            r'https?://[^\s"\'<>)}\]]+',
+            r'(?:www\.)?[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(?:\.[a-zA-Z]{2,})+(?:[/?#][^\s"\'<>)}\]]*)?'
+        ]
         
         urls = set()
-        for match in matches:
-            try:
-                # Clean and extract domain
-                cleaned = re.sub(r'^https?://', '', match)
-                cleaned = re.sub(r'^www\.', '', cleaned)
-                domain = cleaned.split('/')[0].split('?')[0]
-                if '.' in domain and len(domain) > 4:
-                    urls.add(domain)
-            except:
-                pass
+        for pattern in patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            for match in matches:
+                try:
+                    # Clean URL
+                    cleaned = re.sub(r'^https?://', '', match)
+                    cleaned = re.sub(r'^www\.', '', cleaned)
+                    domain = cleaned.split('/')[0].split('?')[0].split('#')[0]
+                    
+                    if self._is_valid_domain(domain):
+                        urls.add(domain)
+                except:
+                    pass
         
         return urls
 
+    def _is_valid_domain(self, domain):
+        """Check if domain is valid"""
+        if not domain or len(domain) < 4:
+            return False
+        
+        # Must have dot
+        if '.' not in domain:
+            return False
+        
+        # Check for invalid characters
+        if any(c in domain for c in [' ', '"', "'", '<', '>', '(', ')']):
+            return False
+        
+        # Must have valid TLD
+        parts = domain.split('.')
+        if len(parts) < 2:
+            return False
+        
+        tld = parts[-1].lower()
+        if not tld.isalpha() or len(tld) < 2:
+            return False
+        
+        return True
+
+    def _is_valid_url(self, url):
+        """Additional URL validation"""
+        # Skip very short URLs
+        if len(url) < 5:
+            return False
+        
+        # Skip localhost/internal
+        if any(x in url.lower() for x in ['localhost', '127.0.0.1', '0.0.0.0', '192.168']):
+            return False
+        
+        return True
+
     def _is_ad_domain(self, url):
-        """Check if URL is an ad domain"""
+        """Check if URL is ad domain"""
         url_lower = url.lower()
         return any(ad in url_lower for ad in self.ad_domains)
 
     def _update_results(self, dt):
-        """Update results in UI"""
+        """Update UI with results"""
         if not self.extracted_urls:
-            self.results_label.text = 'No URLs found!'
-            self.status_label.text = 'No URLs found in APK'
-            self.status_label.color = (1, 0.5, 0, 1)
+            self.results_label.text = 'No URLs found in APK'
+            self.status_label.text = 'No URLs found'
+            self.status_label.color = (1, 0.7, 0, 1)
         else:
-            result_text = f'[b]Found {len(self.extracted_urls)} URLs (Ads Filtered)[/b]\n\n'
+            result_text = f'Found {len(self.extracted_urls)} URLs:\n\n'
             result_text += '\n'.join(self.extracted_urls)
             self.results_label.text = result_text
-            self.status_label.text = f'✓ Extracted {len(self.extracted_urls)} URLs!'
+            self.status_label.text = f'Extracted {len(self.extracted_urls)} URLs!'
             self.status_label.color = (0.5, 1, 0.5, 1)
             self.save_btn.disabled = False
         
         self.extract_btn.disabled = False
 
     def _show_error(self, message):
-        """Show error message"""
+        """Show error"""
         self.status_label.text = message
-        self.status_label.color = (1, 0, 0, 1)
+        self.status_label.color = (1, 0.3, 0.3, 1)
+        self.results_label.text = f'Error occurred:\n{message}'
         self.extract_btn.disabled = False
         self.progress.value = 0
 
     def save_results(self, instance):
-        """Save results to file"""
+        """Save to file"""
         if not self.extracted_urls:
             return
         
         try:
-            output_file = '/sdcard/Download/extracted_urls.txt'
-            with open(output_file, 'w') as f:
-                for url in self.extracted_urls:
-                    f.write(url + '\n')
+            # Try multiple paths
+            save_paths = [
+                '/sdcard/Download/extracted_urls.txt',
+                '/storage/emulated/0/Download/extracted_urls.txt',
+                os.path.join(os.path.expanduser('~'), 'extracted_urls.txt')
+            ]
             
-            self.status_label.text = f'✓ Saved to {output_file}'
-            self.status_label.color = (0.5, 1, 0.5, 1)
+            output_file = None
+            for path in save_paths:
+                try:
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    with open(path, 'w') as f:
+                        f.write(f'APK URL Extractor Results\n')
+                        f.write(f'Total URLs: {len(self.extracted_urls)}\n')
+                        f.write('=' * 50 + '\n\n')
+                        for url in self.extracted_urls:
+                            f.write(url + '\n')
+                    output_file = path
+                    break
+                except:
+                    continue
             
-            # Show success popup
-            popup = Popup(
-                title='Success!',
-                content=Label(text=f'File saved:\n{output_file}'),
-                size_hint=(0.8, 0.3)
-            )
-            popup.open()
+            if output_file:
+                self.status_label.text = f'Saved to {os.path.basename(output_file)}'
+                self.status_label.color = (0.5, 1, 0.5, 1)
+                
+                popup = Popup(
+                    title='Success!',
+                    content=Label(text=f'Saved to:\n{output_file}'),
+                    size_hint=(0.85, 0.35)
+                )
+                popup.open()
+            else:
+                raise Exception("Could not save to any path")
             
         except Exception as e:
-            self.status_label.text = f'Error saving: {str(e)}'
-            self.status_label.color = (1, 0, 0, 1)
+            self.status_label.text = f'Save error: {str(e)}'
+            self.status_label.color = (1, 0.3, 0.3, 1)
 
 
-def run_app():
+if __name__ == '__main__':
     URLExtractorApp().run()
