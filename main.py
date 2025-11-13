@@ -1,5 +1,5 @@
 """
-APK URL Extractor - Fixed & Tested 2025
+APK URL Extractor - Fixed 2025
 Compatible with latest Kivy & Android
 """
 
@@ -401,7 +401,7 @@ class URLExtractorApp(App):
             for path in save_paths:
                 try:
                     os.makedirs(os.path.dirname(path), exist_ok=True)
-                    with open(path, 'w') as f:
+                    with open(path, 'w', encoding='utf-8') as f:
                         f.write(f'APK URL Extractor Results\n')
                         f.write(f'Total URLs: {len(self.extracted_urls)}\n')
                         f.write('=' * 50 + '\n\n')
