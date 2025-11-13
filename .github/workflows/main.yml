@@ -1,4 +1,4 @@
-name: Build APK (P4A Direct)
+name: Build APK (Vishal P4A Engine)
 
 on:
   workflow_dispatch:
@@ -10,19 +10,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Install dependencies
+    - name: Install System Dependencies
       run: |
         sudo apt update
-        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip libffi-dev libssl-dev libncurses5
-        pip install --upgrade pip
-        pip install cython
+        sudo apt install -y git python3 python3-pip openjdk-11-jdk unzip zip libffi-dev libssl-dev libncurses5 liblzma-dev
 
-    - name: Install python-for-android
+    - name: Install Python Dependencies
+      run: |
+        pip install --upgrade pip
+        pip install cython wheel setuptools
+
+    - name: Install python-for-android (latest)
       run: |
         pip install git+https://github.com/kivy/python-for-android.git
+
+    - name: Download Android SDK & NDK
+      run: |
+        mkdir -p $HOME/.local/share
+        cd $HOME/.local/share
+
+        # SDK
+        wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+        unzip commandlinetools-linux-11076708_latest.zip -d android-sdk
+        yes | android-sdk/cmdline-tools/bin/sdkmanager --sdk_root=android-sdk \
+          "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+        # NDK
+        wget https://dl.google.com/android/repository/android-ndk-r25b-linux.zip
+        unzip android-ndk-r25b-linux.zip
+        mv android-ndk-r25b android-ndk
 
     - name: Build APK using P4A
       run: |
@@ -34,12 +53,12 @@ jobs:
           --bootstrap=sdl2 \
           --requirements=python3,kivy,androguard,pillow \
           --orientation=portrait \
+          --arch=arm64-v8a \
           --sdk-dir=$HOME/.local/share/android-sdk \
-          --ndk-dir=$HOME/.local/share/android-ndk \
-          --arch=arm64-v8a
+          --ndk-dir=$HOME/.local/share/android-ndk
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: Vishal-APK
+        name: Vishal-Extractor-APK
         path: *.apk
