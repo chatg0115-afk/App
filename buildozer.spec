@@ -11,8 +11,7 @@ source.include_exts = py,png,jpg,kv,atlas,txt,json
 
 # Version
 version = 1.0
-version.regex = __version__ = ['"](.*)['"]
-version.filename = %(source.dir)s/main.py
+
 
 # Requirements
 requirements = python3,kivy==2.3.0,androguard==4.1.2,pillow==10.4.0,pycryptodome
