@@ -13,7 +13,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
 
-    - name: Build APK inside docker
+    - name: Build inside Docker (with allow-root)
       run: |
         docker run --rm \
           -v ${{ github.workspace }}:/app \
@@ -24,7 +24,7 @@ jobs:
             pip install --upgrade pip &&
             pip install buildozer cython &&
             cd /app &&
-            buildozer -v android debug
+            buildozer --allow-root -v android debug
           "
 
     - name: Upload APK
