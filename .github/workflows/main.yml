@@ -1,83 +1,37 @@
-name: Build APK - APK URL Extractor
+name: Build APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    
+    runs-on: ubuntu-latest
+    container:
+      image: kivy/python-for-android
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          pip install buildozer
+          pip install Cython==0.29.33
+          pip install androguard pillow kivy kivymd pycryptodome
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          git \
-          zip \
-          unzip \
-          openjdk-11-jdk \
-          autoconf \
-          libtool \
-          pkg-config \
-          zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
-          cmake \
-          libffi-dev \
-          libssl-dev \
-          python3-pip \
-          wget
+      - name: Disable root warnings
+        run: |
+          export BUILDOZER_ALLOW_ROOT=1
+          export BUILDOZER_WARN_ON_ROOT=0
 
-    - name: Install Android SDK and Build Tools
-      run: |
-        # Download Android Command Line Tools
-        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-        mkdir -p android-sdk
-        unzip commandlinetools-linux-9477386_latest.zip -d android-sdk
-        mkdir -p android-sdk/cmdline-tools/latest
-        mv android-sdk/cmdline-tools/* android-sdk/cmdline-tools/latest/
-        
-        # Set environment variables
-        echo "ANDROID_SDK_ROOT=$PWD/android-sdk" >> $GITHUB_ENV
-        echo "PATH=$PWD/android-sdk/cmdline-tools/latest/bin:$PWD/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
-        
-        # Accept licenses and install packages
-        yes | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk --licenses
-        android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=android-sdk "platform-tools" "platforms;android-33" "build-tools;33.0.0" "build-tools;34.0.0"
+      - name: Build APK
+        run: buildozer android debug
 
-    - name: Install Buildozer and dependencies
-      run: |
-        pip install --upgrade pip
-        pip install buildozer cython virtualenv
-
-    - name: Build APK with Buildozer
-      env:
-        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-        ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      run: |
-        buildozer -v android debug
-
-    - name: List built APK files
-      run: |
-        echo "=== Built APK Files ==="
-        find . -name "*.apk" -type f
-        echo "=== bin directory ==="
-        ls -la bin/
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: APK-URL-Extractor
-        path: bin/*.apk
-        retention-days: 30
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK
+          path: bin/*.apk
