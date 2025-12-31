@@ -17,7 +17,7 @@ import traceback
 # ==========================
 # CONFIGURATION
 # ==========================
-BOT_TOKEN = os.environ.get('BOT_TOKEN', '8504965473:AAFV_ciorWHwRZo_K6FpETDWTINtmbgUetc')
+BOT_TOKEN = os.environ.get('BOT_TOKEN', '8504965473:AAE9dn_5_ZhEQKdekcgi3chIBHRsJNfC-Ms')
 CHANNEL = os.environ.get('CHANNEL', '@Vishalxnetwork4')
 API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 PORT = int(os.environ.get('PORT', 10000))
